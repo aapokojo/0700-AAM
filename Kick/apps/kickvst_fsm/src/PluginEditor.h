@@ -62,10 +62,7 @@ private:
         ampDecayAttachment,
         volumeAttachment;
 
-    // Parameter listener for updating synth
-    std::unique_ptr<juce::AudioProcessorValueTreeState::Listener> paramListener;
-
-    void parameterChanged(const juce::String& parameterID, float newValue) override;
+    void sliderValueChanged(juce::Slider* slider) override;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FSMKickAudioProcessorEditor)
 };

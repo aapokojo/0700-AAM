@@ -106,10 +106,6 @@ FSMKickAudioProcessorEditor::FSMKickAudioProcessorEditor (FSMKickAudioProcessor&
     creditsLabel.setText("Based on FSM Kick by Krzysztof Foltman (LGPL 2.1)", juce::dontSendNotification);
     creditsLabel.setFont(juce::Font(12.0f));
     creditsLabel.setJustificationType(juce::Justification::centred);
-
-    // Add parameter listener to update synth
-    paramListener = std::make_unique<juce::AudioProcessorValueTreeState::Listener>();
-    paramListener->attachToState(audioProcessor.state);
 }
 
 FSMKickAudioProcessorEditor::~FSMKickAudioProcessorEditor()
@@ -156,13 +152,13 @@ void FSMKickAudioProcessorEditor::resized()
     volumeSlider.setBounds(sliderRow.removeFromLeft(100));
 }
 
-void FSMKickAudioProcessorEditor::parameterChanged(const juce::String& parameterID, float newValue)
+void FSMKickAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
 {
-    // Update synth parameters when parameters change
-    audioProcessor.kickSynth.setStartFrequency(audioProcessor.startFreqParam->get());
-    audioProcessor.kickSynth.setEndFrequency(audioProcessor.endFreqParam->get());
-    audioProcessor.kickSynth.setToneDecay(audioProcessor.toneDecayParam->get());
-    audioProcessor.kickSynth.setToneShape(audioProcessor.toneShapeParam->get());
-    audioProcessor.kickSynth.setAmpDecay(audioProcessor.ampDecayParam->get());
-    audioProcessor.kickSynth.setVolume(audioProcessor.volumeParam->get());
+    // Update synth parameters when sliders change
+    audioProcessor.kickSynth.setStartFrequency(startFreqSlider.getValue());
+    audioProcessor.kickSynth.setEndFrequency(endFreqSlider.getValue());
+    audioProcessor.kickSynth.setToneDecay(toneDecaySlider.getValue());
+    audioProcessor.kickSynth.setToneShape(toneShapeSlider.getValue());
+    audioProcessor.kickSynth.setAmpDecay(ampDecaySlider.getValue());
+    audioProcessor.kickSynth.setVolume(volumeSlider.getValue());
 }

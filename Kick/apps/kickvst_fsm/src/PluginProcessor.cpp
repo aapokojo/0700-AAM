@@ -23,34 +23,17 @@ FSMKickAudioProcessor::FSMKickAudioProcessor()
                       #endif
                        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
                      #endif
-                       ),
-    state(*this, nullptr, juce::Identifier("FSMKickParameters"), 
-          createParameterLayout())
+                       )
 #endif
 {
-    // Get parameter pointers from state
-    startFreqParam = dynamic_cast<juce::AudioParameterFloat*>(state.getParameter("start_freq"));
-    endFreqParam = dynamic_cast<juce::AudioParameterFloat*>(state.getParameter("end_freq"));
-    toneDecayParam = dynamic_cast<juce::AudioParameterFloat*>(state.getParameter("tone_decay"));
-    toneShapeParam = dynamic_cast<juce::AudioParameterFloat*>(state.getParameter("tone_shape"));
-    ampDecayParam = dynamic_cast<juce::AudioParameterFloat*>(state.getParameter("amp_decay"));
-    volumeParam = dynamic_cast<juce::AudioParameterFloat*>(state.getParameter("volume"));
-
-    jassert(startFreqParam != nullptr);
-    jassert(endFreqParam != nullptr);
-    jassert(toneDecayParam != nullptr);
-    jassert(toneShapeParam != nullptr);
-    jassert(ampDecayParam != nullptr);
-    jassert(volumeParam != nullptr);
-
-    // Initialize synth with default values
+    // Initialize synth
     kickSynth.setSampleRate(44100.0);
-    kickSynth.setStartFrequency(startFreqParam->get());
-    kickSynth.setEndFrequency(endFreqParam->get());
-    kickSynth.setToneDecay(toneDecayParam->get());
-    kickSynth.setToneShape(toneShapeParam->get());
-    kickSynth.setAmpDecay(ampDecayParam->get());
-    kickSynth.setVolume(volumeParam->get());
+    kickSynth.setStartFrequency(150.0f);
+    kickSynth.setEndFrequency(50.0f);
+    kickSynth.setToneDecay(0.5f);
+    kickSynth.setToneShape(0.5f);
+    kickSynth.setAmpDecay(0.5f);
+    kickSynth.setVolume(0.8f);
 }
 
 FSMKickAudioProcessor::~FSMKickAudioProcessor()
@@ -154,12 +137,6 @@ bool FSMKickAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) 
 void FSMKickAudioProcessor::handleNoteOn(int note, int velocity)
 {
     // Trigger the kick on any note-on
-    kickSynth.setStartFrequency(startFreqParam->get());
-    kickSynth.setEndFrequency(endFreqParam->get());
-    kickSynth.setToneDecay(toneDecayParam->get());
-    kickSynth.setToneShape(toneShapeParam->get());
-    kickSynth.setAmpDecay(ampDecayParam->get());
-    kickSynth.setVolume(volumeParam->get());
     kickSynth.trigger();
 }
 
@@ -214,77 +191,12 @@ juce::AudioProcessorEditor* FSMKickAudioProcessor::createEditor()
 //==============================================================================
 void FSMKickAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
-    // ValueTreeState handles state saving automatically
-    auto stateTree = state.copyState();
-    std::unique_ptr<juce::XmlElement> xml(stateTree.createXml());
-    copyXmlToBinary(*xml, destData);
+    // For now, no state to save
 }
 
 void FSMKickAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
-    // ValueTreeState handles state loading automatically
-    std::unique_ptr<juce::XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
-    if (xmlState.get() != nullptr)
-    {
-        auto stateTree = juce::ValueTree::fromXml(*xmlState);
-        state.replaceState(stateTree);
-    }
-}
-
-//==============================================================================
-juce::AudioProcessorValueTreeState::ParameterLayout FSMKickAudioProcessor::createParameterLayout()
-{
-    juce::AudioProcessorValueTreeState::ParameterLayout layout;
-    
-    layout.add(std::make_unique<juce::AudioParameterFloat>(
-        "start_freq", "Start Frequency",
-        juce::NormalisableRange<float>(20.0f, 2000.0f, 440.0f),
-        150.0f, "Hz",
-        juce::AudioProcessorParameter::genericParameter,
-        [](float value, int) { return juce::String(value, 1) + " Hz"; }
-    ));
-    
-    layout.add(std::make_unique<juce::AudioParameterFloat>(
-        "end_freq", "End Frequency",
-        juce::NormalisableRange<float>(20.0f, 2000.0f, 440.0f),
-        50.0f, "Hz",
-        juce::AudioProcessorParameter::genericParameter,
-        [](float value, int) { return juce::String(value, 1) + " Hz"; }
-    ));
-    
-    layout.add(std::make_unique<juce::AudioParameterFloat>(
-        "tone_decay", "Tone Decay",
-        juce::NormalisableRange<float>(0.0f, 1.0f),
-        0.5f,
-        juce::AudioProcessorParameter::genericParameter,
-        [](float value, int) { return juce::String(value * 100.0f, 0) + "%"; }
-    ));
-    
-    layout.add(std::make_unique<juce::AudioParameterFloat>(
-        "tone_shape", "Tone Shape",
-        juce::NormalisableRange<float>(0.0f, 1.0f),
-        0.5f,
-        juce::AudioProcessorParameter::genericParameter,
-        [](float value, int) { return juce::String(value * 100.0f, 0) + "%"; }
-    ));
-    
-    layout.add(std::make_unique<juce::AudioParameterFloat>(
-        "amp_decay", "Amp Decay",
-        juce::NormalisableRange<float>(0.0f, 1.0f),
-        0.5f,
-        juce::AudioProcessorParameter::genericParameter,
-        [](float value, int) { return juce::String(value * 100.0f, 0) + "%"; }
-    ));
-    
-    layout.add(std::make_unique<juce::AudioParameterFloat>(
-        "volume", "Volume",
-        juce::NormalisableRange<float>(0.0f, 1.0f),
-        0.8f,
-        juce::AudioProcessorParameter::genericParameter,
-        [](float value, int) { return juce::String(value * 100.0f, 0) + "%"; }
-    ));
-    
-    return layout;
+    // For now, no state to load
 }
 
 //==============================================================================

@@ -34,6 +34,11 @@ endif()
 if( KICK_VST_PLUGIN )
     add_subdirectory(kickvst)
 endif()
+
+# FSM Kick VST3 plugin
+if( KICK_VST_FSM )
+    add_subdirectory(kickvst_fsm)
+endif()
 # KICK MIDI PORT Publish
 if( MIDIPORT )
 	add_subdirectory(midiPort)

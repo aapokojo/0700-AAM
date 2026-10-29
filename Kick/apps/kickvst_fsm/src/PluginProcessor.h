@@ -29,9 +29,6 @@ public:
     ~FSMKickAudioProcessor() override;
 
     //==============================================================================
-    juce::AudioProcessorValueTreeState state;
-
-    //==============================================================================
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
     void releaseResources() override;
 
@@ -64,21 +61,12 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
-    //==============================================================================
-    // Parameter access for editor
-    juce::AudioParameterFloat* startFreqParam;
-    juce::AudioParameterFloat* endFreqParam;
-    juce::AudioParameterFloat* toneDecayParam;
-    juce::AudioParameterFloat* toneShapeParam;
-    juce::AudioParameterFloat* ampDecayParam;
-    juce::AudioParameterFloat* volumeParam;
-
-    //==============================================================================
-    static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
-
 private:
     //==============================================================================
     FSMKickSynth kickSynth;
+
+    // Make synth accessible to editor
+    friend class FSMKickAudioProcessorEditor;
     
     // MIDI handling
     void handleNoteOn(int note, int velocity);
