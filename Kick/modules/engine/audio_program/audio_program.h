@@ -56,6 +56,12 @@
     #include "synth/clipProgram.h"
     #include "synth/drumProgram.h"
     #include "synth/keygroupProgram.h"
+    #include "instrument/mt_instrument_engine.h"
+    #include "instrument/mt_basic_synth_engine.h"
+    #include "instrument/modular/mt_modular_modules.h"
+    #include "instrument/modular/mt_modular_patch.h"
+    #include "instrument/modular/mt_modular_engine.h"
+    #include "instrument/mt_instrument_object.h"
 
     #include "source/mt_audio_common_program.h"
     #include "source/mt_audio_drum_program.h"
@@ -64,5 +70,6 @@
     #include "source/mt_audio_midi_program.h"
     #include "source/mt_audio_cv_program.h"
     #include "source/mt_audio_audio_program.h"
+    #include "source/mt_audio_instrument_program.h"
 
 #endif // Header include guard

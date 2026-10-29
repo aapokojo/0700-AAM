@@ -136,6 +136,10 @@ namespace kick_ui
     {
         //mt::FocusDebugger::enableFocusDebugger( true );
 
+        // Dialogs and notifications open over this screen, wherever it is shown
+        // (full screen on the device, inset and scaled in the simulator).
+        mt::utils::setPopupParent( this );
+
         // Setup default look and feel.
         setLookAndFeel( ui::KickLooknFeel::getLnf() );
 
@@ -248,6 +252,14 @@ namespace kick_ui
         removeKeyListener( &contracts::getKeypressDetector() );
         contracts::DclSignals::hardwareInputTriggered.disconnect_all();
         ctrlBar_.reset();
+    }
+
+    void KickHome::releaseScreens()
+    {
+        cancelPendingUpdate();
+        removeAllChildren();
+        ctrlBar_.reset();
+        screens_.clear();
     }
 
     IScreen* KickHome::getScreen( Screen screen )
@@ -432,6 +444,19 @@ namespace kick_ui
                             ae.saveProject();
                             break;
 
+                        // Record pads into the sequence (the Sampler and Looper use REC themselves).
+                        // Starts playback from the top if stopped; press again, or STOP, to finish.
+                        case contracts::DeviceControlContracts::EN_RECORD:
+                        case contracts::DeviceControlContracts::EN_OVERDUB:
+                            if( getCurrentScreen() != Screen::MenuLooper && getCurrentScreen() != Screen::MenuSampler )
+                            {
+                                const bool record = !ae.isSequenceRecording();
+                                ae.setSequenceRecording( record );
+                                if( record && !ae.isSequencePlaying() )
+                                    ae.setSequencePlay( ae.getSelectedSequence(), true, true );
+                            }
+                            break;
+
                         default: break;
                     }
                 }
@@ -468,6 +493,15 @@ namespace kick_ui
                 log += " register handle command";
                 juce::Logger::writeToLog( log );
                 getScreen( getCurrentScreen() )->handleCommand( f_HwMsg );
+            }
+
+            // REC lights while pads are being recorded (STOP on any screen ends it).
+            static bool recordLed = false;
+            if( ae.isSequenceRecording() != recordLed )
+            {
+                recordLed = ae.isSequenceRecording();
+                contracts::DclSignals::sendCommandToDcl( recordLed ? contracts::DclContractsHelper::setLEDONMessage( contracts::DeviceControlContracts::EN_RECORD )
+                                                                   : contracts::DclContractsHelper::setLEDOFFMessage( contracts::DeviceControlContracts::EN_RECORD ) );
             }
         }
         else if( !ui::RecentProject::isProjectLoading && contracts::DclContractsHelper::isCenterKnobMessage( f_HwMsg ) )

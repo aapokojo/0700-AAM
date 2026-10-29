@@ -122,6 +122,37 @@ namespace mt
     sigslot::signal<>    signals::on1_32      = {};
     sigslot::signal<>    signals::on1_32T     = {};
 
+    void signals::disconnectAll()
+    {
+        midiInputsChanged.disconnect_all();
+        bankChanged.disconnect_all();
+        playStateChanged.disconnect_all();
+        padColourChanged.disconnect_all();
+        onProgramSelectionChange.disconnect_all();
+        onSequenceSelectionChange.disconnect_all();
+        onTrackSelectionChange.disconnect_all();
+        onSongStopped.disconnect_all();
+        onNextSeqAboutToPlayInSong.disconnect_all();
+        onSongSequencePlay.disconnect_all();
+        onNextSequencePlay.disconnect_all();
+        onBar.disconnect_all();
+        onBeat.disconnect_all();
+        onTick.disconnect_all();
+        onLoopBegin.disconnect_all();
+        onLoopEnd.disconnect_all();
+        onNote.disconnect_all();
+        on1_2.disconnect_all();
+        on1_2T.disconnect_all();
+        on1_4.disconnect_all();
+        on1_4T.disconnect_all();
+        on1_8.disconnect_all();
+        on1_8T.disconnect_all();
+        on1_16.disconnect_all();
+        on1_16T.disconnect_all();
+        on1_32.disconnect_all();
+        on1_32T.disconnect_all();
+    }
+
     // API definitions
     MTAudioInterface& getAudioInterface()
     {
@@ -133,17 +164,49 @@ namespace mt
         : manager( std::make_unique<MTAudioManager>( Name, Manufacturer, Version ) )
         , MTLooperInterface( manager )
 
-    {}
+    {
+        MTInstrumentProgram::tempoSource = [this]() { return manager ? (double)manager->getBPM() : 0.0; };
+    }
 
     MTAudioInterface::~MTAudioInterface()
     {
         manager.reset();
     }
+
+    void MTAudioInterface::shutdown()
+    {
+        if( !manager )
+            return;
+
+        MTInstrumentProgram::tempoSource = nullptr;
+
+        // Nothing in the UI may be notified from here on. Detach again even if the app
+        // already did: UI teardown (visibility changes) can re-register listeners.
+        manager->removeAllListeners();
+        signals::disconnectAll();
+
+        // Close while the manager is still reachable (unique_ptr::reset() nulls
+        // `manager` before running ~MTAudioManager, which closes again).
+        manager->closeProject();
+        manager.reset();
+    }
     ///
     /// Listners
     ///
-    void MTAudioInterface::addListener( MTAudioInterfaceListener* l ) { manager->addListener( l ); }
-    void MTAudioInterface::removeListener( MTAudioInterfaceListener* l ) { manager->removeListener( l ); }
+    void MTAudioInterface::removeAllListeners()
+    {
+        if( manager ) manager->removeAllListeners();
+    }
+
+    // Null-safe: UI singletons unregister from their static destructors, after shutdown().
+    void MTAudioInterface::addListener( MTAudioInterfaceListener* l )
+    {
+        if( manager ) manager->addListener( l );
+    }
+    void MTAudioInterface::removeListener( MTAudioInterfaceListener* l )
+    {
+        if( manager ) manager->removeListener( l );
+    }
 
     ///
     /// Project API's
@@ -931,11 +994,13 @@ namespace mt
 
     int MTAudioInterface::setSequencePause()
     {
+        setSequenceRecording( false );
         return manager->pause();
     }
 
     int MTAudioInterface::setSequenceStop()
     {
+        setSequenceRecording( false );
         return manager->stop();
     }
 
@@ -1748,7 +1813,79 @@ namespace mt
         DBG( "addLiveMidiNoteFuntion" );
         if( auto t = manager->getTrack( Selection ) )
             t->processIncomingMidiMessage( Msg );
+        if( seqRecording )
+            recordLiveMidiMsg( Selection, Msg );
         return 0;
+    }
+
+    void MTAudioInterface::setSequenceRecording( bool Record )
+    {
+        if( Record == seqRecording )
+            return;
+        if( Record )
+            manager->getUndoManager().beginNewTransaction( "Record" ); // the take undoes as one step
+        else
+            for( int n = 0; n < (int)recordingNotes.size(); ++n )
+                if( recordingNotes[(size_t)n].held )
+                    finishRecordedNote( n ); // notes still held when recording ends
+        seqRecording = Record;
+    }
+
+    void MTAudioInterface::recordLiveMidiMsg( const MTSelected& Selection, const juce::MidiMessage& Msg )
+    {
+        if( !isSequencePlaying() || !( Msg.isNoteOn() || Msg.isNoteOff() ) )
+            return;
+        auto* t = manager->getTrack( Selection );
+        if( !t || !t->getLengthInTicks() )
+            return;
+
+        auto& rec = recordingNotes[(size_t)Msg.getNoteNumber()];
+        if( Msg.isNoteOn() )
+        {
+            if( rec.held )
+                finishRecordedNote( Msg.getNoteNumber() );
+            rec = { Selection, t->getTickPosition(), Msg.getVelocity(), true };
+        }
+        else if( rec.held )
+            finishRecordedNote( Msg.getNoteNumber() );
+    }
+
+    void MTAudioInterface::finishRecordedNote( int Note )
+    {
+        auto& slot = recordingNotes[(size_t)Note];
+        auto  rec  = slot;
+        slot.held  = false;
+
+        auto* t = manager->getTrack( rec.target );
+        if( !t || !t->getLengthInTicks() )
+            return;
+
+        // Snap the start to the sequence's TIME DIV; the length is how long the pad was held.
+        const auto lengthInTicks = t->getLengthInTicks();
+        auto*      tempo         = getTempoMgr( rec.target.sequence );
+        const int  grid          = tempo ? juce::jmax( 1, tempo->getTicksPerQuantization() ) : 1;
+        const auto start         = (unsigned int)( juce::roundToInt( rec.start / (double)grid ) * grid ) % lengthInTicks;
+        const auto now           = t->getTickPosition();
+        const auto held          = ( now + lengthInTicks - rec.start ) % lengthInTicks;
+        const int  length        = held > 0 ? (int)held : grid;
+
+        auto write = [this, Note, rec, start, length] {
+            if( !manager ) // shut down while waiting
+                return;
+            if( auto* track = manager->getTrack( rec.target ) )
+                track->addOrModifyNote( Note, (int)start, length, rec.velocity );
+        };
+
+        // Snapped forward to a point the playhead hasn't reached yet: written now, the sequencer
+        // would play it again a moment after the live hit. Write it once the playhead has passed.
+        const auto ahead = ( start + lengthInTicks - now ) % lengthInTicks;
+        if( ahead > 0 && ahead <= (unsigned int)grid && tempo && tempo->getBPM() > 0 && tempo->getTicksPerBeat() > 0 )
+        {
+            const double ms = 60000.0 * ahead / ( (double)tempo->getTicksPerBeat() * tempo->getBPM() );
+            juce::Timer::callAfterDelay( juce::roundToInt( ms ) + 20, write );
+        }
+        else
+            write();
     }
 
     int MTAudioInterface::addLiveMidiNote( const MTSelected& Selection, int Note, int Velocity )

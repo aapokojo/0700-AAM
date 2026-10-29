@@ -170,11 +170,11 @@ namespace kick_ui
             case 3:
                 dynamic_cast<SubmixMixer*>( pView )->knobCommand( knob, value );
                 break;
-            case 4:
-                dynamic_cast<TrackMidiMixer*>( pView )->knobCommand( knob, value );
+            case 4: // order matches pViews: Programs, Sends, Returns, Submixes, Output, Midi, Audio
+                dynamic_cast<OutputTrackMixer*>( pView )->knobCommand( knob, value );
                 break;
             case 5:
-                dynamic_cast<OutputTrackMixer*>( pView )->knobCommand( knob, value );
+                dynamic_cast<TrackMidiMixer*>( pView )->knobCommand( knob, value );
                 break;
             case 6:
                 dynamic_cast<AudioTrackMixer*>( pView )->knobCommand( knob, value );
@@ -194,20 +194,7 @@ namespace kick_ui
             std::vector<int> pads;
 
             padNo += bankOffset;
-            pads.push_back( padNo );
-
-            for( auto& it : pads )
-            {
-                juce::MidiMessage Msg;
-
-                if( padState == contracts::DeviceControlContracts::BTN_PRESSED )
-                    Msg = juce::MidiMessage::noteOn( 1, it, (juce::uint8)velocity );
-                else if( padState == contracts::DeviceControlContracts::BTN_RELEASED )
-                    Msg = juce::MidiMessage::noteOff( 1, it );
-
-                ae.addLiveMidiMsg( ae.getSelected(), Msg );
-            }
-            pads.clear();
+            kick_ui::PadNotes::handle( f_HwMsg ); // shared pad -> note mapping
         }
         else if( contracts::DclContractsHelper::isKnobMessage( f_HwMsg ) )
         {

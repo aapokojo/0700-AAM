@@ -25,6 +25,15 @@ namespace AudIO
         _running.store( true );
     }
 
+    void DesignImpl::stop()
+    {
+        // Without this, objects queued for removal after the audio thread has
+        // stopped are only deleted in ~DesignImpl, where their destructors call
+        // back into this half-destroyed design.
+        _running.store( false );
+        processRemoveQueue();
+    }
+
     inline void DesignImpl::process( Buffer<float>& Buffer )
     {
         auto dInGain     = designInputGain.getNext( _blockSize );
@@ -222,6 +231,24 @@ namespace AudIO
                 {
                     value.removeConnectionsTo( objMeta );
                 }
+            }
+
+            // Take it out of every bus it feeds, as Design::removeFromBus does. Buses key their
+            // inputs by this meta's address: left behind, the entry made the next object that
+            // happened to get the same address look "already connected", so sendToBus() refused
+            // it (silent programs after a project reload), and the bus kept reading this
+            // object's freed output buffer.
+            for( auto& bus : _buses )
+            {
+                if( bus->getId() == id )
+                    continue;
+                auto [removed, chn] = bus->removeInput( *objMeta );
+                if( removed )
+                    if( auto busMeta = getObjectMeta( bus->getId() ) )
+                    {
+                        objMeta->unpatch( *busMeta, 0, chn );
+                        objMeta->unpatch( *busMeta, 1, chn + 1 );
+                    }
             }
 
             _dirty.store( true );

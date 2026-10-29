@@ -53,7 +53,9 @@ namespace mt
 
         // Initialize Audio device...
         juce::MessageManager::callAsync( [&]() {
-            dm = std::make_unique<AudioDevice>( AUDIO_NUM_INPUTS, AUDIO_NUM_OUTPUTS, juce::String() );
+            // Reopen the device chosen on the Settings > Audio page, if any (else the default).
+            const auto savedDevice = getAppDirs( MTPrefs ).getChildFile( "audio_device.xml" );
+            dm = std::make_unique<AudioDevice>( AUDIO_NUM_INPUTS, AUDIO_NUM_OUTPUTS, savedDevice.existsAsFile() ? savedDevice.loadFileAsString() : juce::String() );
 
             if( dm.get() )
             {
@@ -140,6 +142,11 @@ namespace mt
     {
         MTAudioRecorderManager::closeRecorder();
         internalTimer.stopTimer();
+
+        // Remove the previewer like the recorders, so it isn't destroyed inside
+        // ~Design while it still unregisters itself from the design's buses.
+        if( _previewer )
+            engine.removeObject( _previewer->getId() );
         _previewer = nullptr;
 
         MTAudioTransportManager::stop();

@@ -6,12 +6,23 @@
 #include "contracts/dcl/dcl_contracts.h"
 #include "contracts/dcl/dcl_contracts_helper.h"
 #include "kick_SimulatorInterface.h"
+#ifdef SIM_BUILD
+    #include <map>
+    #include <common/source/kick_Factory.h>
+#endif
 
 #include "ComConfig.hpp"
 
+// Serial link to the panel MCU. Also enabled on macOS so a desktop build can talk to a virtual
+// panel over a pseudo-terminal; set KICK_PANEL_DEVICE to its path.
+#if( JUCE_LINUX || __linux__ || JUCE_MAC )
+    #define KICK_PANEL_SERIAL 1
+#else
+    #define KICK_PANEL_SERIAL 0
+#endif
+
 namespace Controls
 {
-    std::atomic<bool> shiftBtnState{ false };
     std::atomic<bool> halfLevelState{ false };
 
     ///
@@ -35,24 +46,24 @@ namespace Controls
 
         ~HwSerialData()
         {
-#ifndef __APPLE__
+            // Stop the transmit thread before the members it uses are destroyed.
             close();
-#endif
         }
 
         void connect()
         {
-#if( JUCE_LINUX || __linux__ )
-            if( juce::File( "/dev/ttymxc0" ).exists() )
+#if KICK_PANEL_SERIAL
+            const auto   panelDeviceOverride = juce::SystemStats::getEnvironmentVariable( "KICK_PANEL_DEVICE", {} );
+            juce::String serialDev           = panelDeviceOverride.isNotEmpty() ? panelDeviceOverride : juce::String( "/dev/ttymxc0" );
+            if( juce::File( serialDev ).exists() )
             {
                 juce::StringPairArray portlist = SerialPort::getSerialPortPaths();
 
-                if( !portlist.size() )
+                // A virtual panel's pseudo-terminal is not in the serial port list.
+                if( !portlist.size() && panelDeviceOverride.isEmpty() )
                     return;
 
-                bool         hasSerialPort = false;
-                juce::String serialDev     = "/dev/ttymxc0";
-                serialDev                  = "/dev/ttymxc0";
+                bool hasSerialPort = false;
 
                 auto serialDebug = []( juce::String str1, juce::String str2 ) {
                     DBG( str1 );
@@ -60,9 +71,7 @@ namespace Controls
                 };
                 SerialPortConfig config( 230400, 8, SerialPortConfig::SERIALPORT_PARITY_NONE, SerialPortConfig::STOPBITS_1, SerialPortConfig::FLOWCONTROL_NONE );
 
-    #if( JUCE_LINUX || __linux__ )
                 juce::String devPath = serialDev;
-    #endif
                 if( sPort )
                 {
                     input.reset( nullptr );
@@ -70,7 +79,6 @@ namespace Controls
                     sPort.reset( nullptr );
                 }
                 {
-    #if( JUCE_LINUX || __linux__ )
                     CPktMgr::HWMsg_t hwMsg;
                     hwMsg.pktType = CPktMgr::EN_PKT_TYPE_SYSTEM;
                     hwMsg.pktCmd  = contracts::DeviceControlContracts::SysCmd::EN_SYS_COMM_INIT;
@@ -84,7 +92,6 @@ namespace Controls
                     hwMsg.data.push_back( (int)contracts::DeviceControlContracts::SysCommCmd::EN_SYS_COMM_CONNECTED );
                     output.reset( new SerialPortOutputStream( sPort.get() ) );
                     Controls::InputEvents::sendMessageToHardware( hwMsg );
-    #endif
                 }
             }
             else
@@ -129,7 +136,7 @@ namespace Controls
         void handleAsyncUpdate() override { txEvent.signal(); }
         void sendSerialOutData( const std::vector<char>& data )
         {
-#if( JUCE_LINUX || __linux__ )
+#if KICK_PANEL_SERIAL
             if( !output )
                 return;
 
@@ -241,7 +248,7 @@ namespace Controls
                         {
                             DBG( "Button state = " << contracts::DclContractsHelper::getButtonState( rxMsg ) );
                             if( ( contracts::DeviceControlContracts::EN_SHIFT == contracts::DclContractsHelper::getButtonCode( rxMsg ) ) )
-                                Controls::shiftBtnState.store( contracts::DclContractsHelper::getButtonState( rxMsg ) );
+                                contracts::shiftBtnState.store( contracts::DclContractsHelper::getButtonState( rxMsg ) );
                         }
                         // juce::String log;
                         // log += "Cmd:" + juce::String( rxMsg.pktCmd ) + " " + "type:" + juce::String( rxMsg.pktType );
@@ -275,7 +282,7 @@ namespace Controls
 
                 while( txQueue.try_dequeue( item ) && !threadShouldExit() )
                 {
-#if( JUCE_LINUX || __linux__ )
+#if KICK_PANEL_SERIAL
                     txData.clear();
                     ms_objPktMgrUsb.BuildAndTransmitPacket( item, txData );
                     sendSerialOutData( txData );
@@ -306,12 +313,36 @@ namespace Controls
     void Controls::InputEvents::initialize()
     {
 #ifdef SIM_BUILD
-        //creating multiple instance of SimulatorInterface using factoty is somehow clearing the connected signals need to find the reason
-        simInterface = Factory<SimulatorInterface>::makeObject( 0 );
-        simInterface->hwInputReceived.connect( []( int id, const std::vector<char>& data ) {
-            Controls::InputEvents::dispatchHardwareEvent( id, data );
-        } );
-#else
+        // Software control surface: the simulator registers a SimulatorInterface implementation (type 0)
+        // with the Factory. Its packets enter here exactly where decoded serial frames would.
+        if( !simInterface )
+        {
+            simInterface = Factory<SimulatorInterface>::makeObject( 0 );
+            if( simInterface )
+            {
+                simInterface->hwInputReceived.connect( []( CPktMgr::HWMsg_t& rxMsg ) {
+                    // Same handling as HwSerialData::changeListenerCallback for a decoded request frame.
+                    if( rxMsg.pktDir != CPktMgr::enumPacketDir::EN_PKT_REQUEST || rxMsg.data.empty() )
+                        return;
+
+                    if( contracts::DclContractsHelper::isButtonMessage( rxMsg ) && rxMsg.data.size() > 1
+                        && contracts::DeviceControlContracts::EN_SHIFT == contracts::DclContractsHelper::getButtonCode( rxMsg ) )
+                        contracts::shiftBtnState.store( contracts::DclContractsHelper::getButtonState( rxMsg ) );
+
+                    Controls::InputEvents::dispatchHardwareEvent( rxMsg );
+                } );
+            }
+            else
+            {
+                juce::Logger::outputDebugString( "SIM_BUILD: no SimulatorInterface registered" );
+            }
+        }
+
+        // An external panel (real, or a virtual one on a pseudo-terminal) can drive the
+        // simulator too when KICK_PANEL_DEVICE names its serial device.
+        if( juce::SystemStats::getEnvironmentVariable( "KICK_PANEL_DEVICE", {} ).isEmpty() )
+            return;
+#endif
         if( !_FPPort )
         {
             _FPPort.reset( new HwSerialData );
@@ -319,7 +350,6 @@ namespace Controls
         }
         _FPPort->connect();
         // Send Rebooted command to GD
-#endif
     }
 
     void Controls::InputEvents::reconnect()
@@ -356,7 +386,12 @@ namespace Controls
         }
 
 #ifdef SIM_BUILD
-        if( simInterface ) simInterface->sendMessageToHW( f_HwMsg );
+        if( simInterface )
+        {
+            simInterface->sendMessageToHW( f_HwMsg );
+            if( !_FPPort )
+                return;
+        }
 #endif
         if( _FPPort ) _FPPort->sendMessageToControlSurface( f_HwMsg );
         else
