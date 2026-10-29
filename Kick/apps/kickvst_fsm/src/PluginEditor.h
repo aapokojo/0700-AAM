@@ -19,8 +19,7 @@
     FSM Kick VST3 Plugin Editor
  */
 class FSMKickAudioProcessorEditor  : public juce::AudioProcessorEditor,
-                                      private juce::Slider::Listener,
-                                      private juce::AudioProcessorValueTreeState::Listener
+                                      private juce::Slider::Listener
 {
 public:
     FSMKickAudioProcessorEditor (FSMKickAudioProcessor&);
