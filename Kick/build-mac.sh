@@ -7,7 +7,6 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CMAKE="${CMAKE:-cmake}"
 NINJA="${NINJA:-ninja}"
 BUILD="$ROOT/Kick/build-mac"
-BUILD_VST="$ROOT/Kick/build-mac-vst"
 JUCE_DIR="$ROOT/.3rdPartySourceCache/JUCE-7.0.12"
 [ -d "$JUCE_DIR" ] || git clone --depth 1 --branch 7.0.12 https://github.com/juce-framework/JUCE.git "$JUCE_DIR"
 
