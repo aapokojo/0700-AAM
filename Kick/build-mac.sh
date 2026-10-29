@@ -14,17 +14,13 @@ JUCE_DIR="$ROOT/.3rdPartySourceCache/JUCE-7.0.12"
 # JUCE 7.0.12's juceaide calls an API removed in macOS 15; target 12.0 as Kick itself does.
 export MACOSX_DEPLOYMENT_TARGET=12.0
 
-# Build main KICK app and simulator
+# Build everything in one go - apps and VST plugins
 "$CMAKE" -S "$ROOT/Kick" -B "$BUILD" -G Ninja -DCMAKE_MAKE_PROGRAM="$(command -v "$NINJA" || echo "$NINJA")" \
-    -DCMAKE_BUILD_TYPE=Release -DTIMESTAMP=OFF -DKICK_SIMULATOR=ON -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+    -DCMAKE_BUILD_TYPE=Release -DTIMESTAMP=OFF \
+    -DKICK_SIMULATOR=ON -DKICK_VST_PLUGIN=ON -DKICK_VST_FSM=ON \
+    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
     -DCPM_JUCE_SOURCE="$JUCE_DIR" -DCPM_AudIO_SOURCE="$ROOT/AudIO" -DCPM_COM_PROTOCOL_SOURCE="$ROOT/ComProtocol"
-"$NINJA" -C "$BUILD" Kick KT_KickEM
-
-# Build VST3 plugins
-"$CMAKE" -S "$ROOT/Kick" -B "$BUILD_VST" -G Ninja -DCMAKE_MAKE_PROGRAM="$(command -v "$NINJA" || echo "$NINJA")" \
-    -DCMAKE_BUILD_TYPE=Release -DTIMESTAMP=OFF -DKICK_VST_PLUGIN=ON -DKICK_VST_FSM=ON -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
-    -DCPM_JUCE_SOURCE="$JUCE_DIR" -DCPM_AudIO_SOURCE="$ROOT/AudIO" -DCPM_COM_PROTOCOL_SOURCE="$ROOT/ComProtocol"
-"$NINJA" -C "$BUILD_VST" kickvst kickvst_fsm
+"$NINJA" -C "$BUILD" Kick KT_KickEM kickvst kickvst_fsm
 
 # On macOS the app finds ./assets, ./demos and ./templates relative to the working directory,
 # and the build copies them into the build folder, so start the apps from there.
@@ -34,8 +30,8 @@ echo "  $BUILD/Kick.app"
 echo "  $BUILD/KT_KickEM.app"
 echo ""
 echo "Built VST3 plugins:"
-echo "  $BUILD_VST/kickvst.vst3"
-echo "  $BUILD_VST/kickvst_fsm.vst3"
+echo "  $BUILD/kickvst.vst3"
+echo "  $BUILD/kickvst_fsm.vst3"
 echo ""
 echo "Run the simulator with:"
 echo "  cd \"$BUILD\" && KT_KickEM.app/Contents/MacOS/KT_KickEM"
