@@ -42,3 +42,4 @@
 */
 #include "sources/common/kick_AHDSView.cpp"
 #include "sources/common/kick_FilterEnvEdit.cpp"
+#include "sources/instrument/kick_MachineParamHelper.cpp"

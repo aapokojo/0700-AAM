@@ -26,9 +26,7 @@ juce::String MachineParamHelper::getDisplayTextForParam(
     // Otherwise, format as numeric value
     if (numDecimalPlaces >= 0)
     {
-        juce::String format;
-        format << std::fixed << std::setprecision(numDecimalPlaces);
-        return juce::String::formatted(format, value);
+        return juce::String(value, numDecimalPlaces);
     }
     return juce::String(value);
 }
