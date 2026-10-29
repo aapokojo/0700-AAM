@@ -61,6 +61,7 @@
     #include "instrument/arpman_engine.h"
     #include "instrument/fsm_kick_engine.h"
     #include "instrument/kickxp_engine.h"
+    #include "instrument/infector_engine.h"
     #include "instrument/modular/mt_modular_modules.h"
     #include "instrument/modular/mt_modular_patch.h"
     #include "instrument/modular/mt_modular_engine.h"

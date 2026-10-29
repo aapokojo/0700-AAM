@@ -4,6 +4,7 @@
 
 #include "arpman_engine.h"
 #include "fsm_kick_engine.h"
+#include "infector_engine.h"
 #include "kickxp_engine.h"
 
 namespace mt
@@ -271,6 +272,7 @@ namespace mt
             static std::map<juce::String, InstrumentEngineRegistry::Factory> engines = {
                 { "ArpMan", []() { return std::make_unique<ArpManEngine>(); } },
                 { "Basic Synth", []() { return std::make_unique<BasicSynthEngine>(); } },
+                { "FSM Infector", []() { return std::make_unique<InfectorEngine>(); } },
                 { "Modular", []() { return std::make_unique<ModularEngine>(); } },
                 { "FSM Kick", []() { return std::make_unique<FSMKickEngine>(); } },
                 { "FSM Kick XP", []() { return std::make_unique<KickXPEngine>(); } },
