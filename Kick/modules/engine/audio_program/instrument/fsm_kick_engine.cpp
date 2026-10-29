@@ -92,7 +92,7 @@ namespace mt
         envLevel = 1.0f;
         
         // Calculate amp decay coefficient
-        envDecayCoef = decayCoef( smoothedAmpDecay, sampleRate );
+        envDecayCoef = (float)std::exp( -6.9 / juce::jmax( 1.0, smoothedAmpDecay * sampleRate ) );
     }
 
     void FSMKickEngine::noteOff( int /*Note*/ )
