@@ -2,6 +2,8 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
+#include "fsm_kick_engine.h"
+
 namespace mt
 {
     namespace
@@ -267,6 +269,7 @@ namespace mt
             static std::map<juce::String, InstrumentEngineRegistry::Factory> engines = {
                 { "Basic Synth", []() { return std::make_unique<BasicSynthEngine>(); } },
                 { "Modular", []() { return std::make_unique<ModularEngine>(); } },
+                { "FSM Kick", []() { return std::make_unique<FSMKickEngine>(); } },
             };
             return engines;
         }
