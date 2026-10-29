@@ -3,6 +3,7 @@
  */
 
 #include "fsm_kick_engine.h"
+#include "kickxp_engine.h"
 
 namespace mt
 {
@@ -270,6 +271,7 @@ namespace mt
                 { "Basic Synth", []() { return std::make_unique<BasicSynthEngine>(); } },
                 { "Modular", []() { return std::make_unique<ModularEngine>(); } },
                 { "FSM Kick", []() { return std::make_unique<FSMKickEngine>(); } },
+                { "FSM Kick XP", []() { return std::make_unique<KickXPEngine>(); } },
             };
             return engines;
         }

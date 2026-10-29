@@ -43,6 +43,7 @@
 #include "synth/DrumProgram.cpp"
 #include "synth/KeygroupProgram.cpp"
 #include "instrument/fsm_kick_engine.cpp"
+#include "instrument/kickxp_engine.cpp"
 #include "instrument/mt_basic_synth_engine.cpp"
 #include "instrument/modular/mt_modular_modules.cpp"
 #include "instrument/modular/mt_modular_patch.cpp"

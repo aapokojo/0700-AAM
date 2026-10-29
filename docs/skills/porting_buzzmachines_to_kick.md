@@ -2,6 +2,13 @@
 
 This guide outlines the process for porting BuzzMachines synthesis algorithms to the Behringer KICK (0700-AAM) desktop build as either standalone VST3 plugins or internal instrument engines.
 
+## Quick Reference
+
+- **Build directory:** `Kick/build-mac/` (contains KT_KickEM.app and VST3 plugins)
+- **Emulator:** `Kick/build-mac/KT_KickEM.app`
+- **Test command:** `cd Kick/build-mac && open KT_KickEM.app`
+- **Plugin output:** `Kick/build-mac/kickvst_<name>.vst3`
+
 ## Prerequisites
 
 ### Source Repository
@@ -291,9 +298,28 @@ fi
 
 ### Step 8: Install and Test
 
+**For Internal Engine (Emulator):**
+```bash
+# The emulator is built in Kick/build-mac/
+# Run it directly:
+cd Kick/build-mac
+open KT_KickEM.app
+# Or from command line:
+Kick/build-mac/KT_KickEM.app/Contents/MacOS/KT_KickEM
+
+# In emulator:
+# 1. Go to Program tab
+# 2. Click + (Add)
+# 3. Select PLUGIN
+# 4. Click Apply
+# 5. Select your engine from the list (e.g., "FSM Kick XP")
+# 6. Parameters will appear automatically (4 per page)
+```
+
+**For Standalone VST3 Plugin:**
 ```bash
 # Copy to DAW VST3 folder
-cp -r build-mac/kickvst_fsm.vst3 ~/Library/Audio/Plug-Ins/VST3/
+cp -r Kick/build-mac/kickvst_fsm.vst3 ~/Library/Audio/Plug-Ins/VST3/
 
 # Test in DAW
 # Load "kickvst_fsm" as instrument plugin
@@ -388,15 +414,18 @@ namespace
 # Rebuild emulator
 cd Kick && bash build-mac.sh
 
-# Run emulator
-./build-mac/KT_KickEM.app/Contents/MacOS/KT_KickEM
+# Run emulator (from project root)
+./Kick/build-mac/KT_KickEM.app/Contents/MacOS/KT_KickEM
+
+# Or from build directory:
+cd Kick/build-mac && open KT_KickEM.app
 
 # In emulator:
 # 1. Go to Program tab
 # 2. Click + (Add)
 # 3. Select PLUGIN
 # 4. Click Apply
-# 5. Select FSM Kick as engine
+# 5. Select your new engine (e.g., FSM Kick) from the list
 # 6. Parameters will appear automatically (4 per page)
 ```
 
@@ -446,7 +475,47 @@ in the emulator's Plugin program type, with the following parameters:
 **Problem:** Buzz parameters are simple floats.
 **Solution:** Use JUCE's `AudioProcessorValueTreeState` or implement `setParam()`.
 
-### 6. Missing JUCE Modules
+### 6. Volume Control
+**Problem:** Most Buzz machines don't have an explicit volume/gain parameter.
+**Solution:** Always add a **Volume** parameter (normalized 0-1). For **new ports**, place it as the **first parameter** (index 0) for consistency. For existing ports, add it where it makes sense (but prefer the beginning).
+
+**Implementation:**
+```cpp
+// In your engine header (enum Param) - NEW PORTS:
+enum Param
+{
+    kVolume,          // Volume (0-1) - FIRST for new ports
+    kStartFreq,       // Start frequency
+    kEndFreq,         // End frequency
+    // ... other parameters
+    kNumParams
+};
+
+// In your engine's params initialization (cpp file):
+params.push_back({ "volume", "Volume", "", 0.0f, 1.0f, 0.7f });  // Default to ~70%
+params.push_back({ "start_freq", "Start Freq", "Hz", 20.0f, 500.0f, 100.0f });
+// ... other parameters
+
+// In process/processBlock:
+float gain = values[kVolume];  // Apply to output
+outputSample *= gain;
+
+// In updateParameters():
+volume = values[kVolume];  // Store for use in audio processing
+```
+
+**Buzz Machine Parameter Mapping:**
+- If the original has "Trigger" or "Gain" → keep it as a separate parameter (it's not the same as global volume)
+- If the original has no volume control → **add Volume parameter**
+- Buzz parameters are typically 0-240 or 0-255, normalize to 0-1
+- Example: `values[kParam] = buzzValue / 240.0f` or `/ 255.0f`
+
+**Note:** 
+- FSM Kick engine has Volume as the last parameter (existing port)
+- KickXP engine has Volume as the first parameter (new port following this rule)
+- For consistency going forward, all new ports should have Volume as parameter 0
+
+### 7. Missing JUCE Modules
 **Problem:** Plugin doesn't link due to missing audio modules.
 **Solution:** Add required modules in CMakeLists.txt:
 ```cmake
