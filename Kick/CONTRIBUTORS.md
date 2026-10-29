@@ -25,9 +25,19 @@ The following contributions enable building and running the KICK simulator (KT_K
 - **Original vendor** for juce_serialport module (as indicated in module declaration)
 - **Website**: https://github.com/Eight4aWish
 
+## FSM Kick VST3 Plugin
+
+### Krzysztof Foltman <kfoltman@users.sourceforge.net>
+- **Source**: [Buzztrax/buzzmachines](https://github.com/Buzztrax/buzzmachines) (FSM/Kick/)
+- **License**: LGPL 2.1 (see buzzmachines/FSM/COPYING)
+- **Contributions**:
+  - Original FSM Kick synthesis algorithm adapted for VST3 plugin
+  - `Kick/apps/kickvst_fsm/` - VST3 plugin implementation based on FSM Kick
+
 ## License
 
 All compat modules and modifications are licensed under **AGPL-3.0-or-later**, consistent with the original project license.
+FSM Kick VST3 plugin code incorporates work under **LGPL 2.1** (compatible with AGPL-3.0).
 
 ## Code of Conduct Compliance
 
