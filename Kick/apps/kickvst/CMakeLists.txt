@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.15)
 
 project(kickvst VERSION 1.4.2)
 
+# Generate configuration file
+configure_file(${CMAKE_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config.h)
+
 # juce helper function to create a library, which is configured as a JUCE plugin
 
 juce_add_plugin(${PROJECT_NAME}
@@ -38,6 +41,8 @@ PUBLIC
     JUCE_USE_CURL=0
     JUCE_VST3_CAN_REPLACE_VST2=0
 )
+
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
         juce::juce_recommended_config_flags

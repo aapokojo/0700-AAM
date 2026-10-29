@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.15)
 
 project(kickvst_fsm VERSION 1.0.0)
 
+# Generate configuration file
+configure_file(${CMAKE_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config.h)
+
 # JUCE plugin configuration
 juce_add_plugin(${PROJECT_NAME}
     VERSION                     "${PROJECT_VERSION}"
@@ -44,6 +47,9 @@ target_compile_definitions(${PROJECT_NAME}
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
 )
+
+# Add build directory to include path for config.h
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
 # Link to JUCE modules
 target_link_libraries(${PROJECT_NAME} PRIVATE
