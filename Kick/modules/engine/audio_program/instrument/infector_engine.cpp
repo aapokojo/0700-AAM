@@ -15,26 +15,6 @@
 namespace mt
 {
 
-// Waveform names for discrete parameter display
-static const char* waveformNames[] = {
-    "Sine", "Triangle", "SuperSaw", "PWM Sqr", "Dbl Sqr", "Hexagon", "Carrot",
-    "Onion", "Tomato", "Cabbage", "Cucumber", "Octave", "1-3", "4-6", "Regs",
-    "Saw", "User A", "User AA'", "User B", "User BB'", "User C", "User CC'",
-    "User D", "User DD'"
-};
-
-static const char* subOscWaveformNames[] = {
-    "Sine", "Tri", "Saw", "SuperSaw", "Sqr", "Oct", "1-3", "4-6", "Regs", "Hex",
-    "FM", "XT1", "XT2", "User A", "User A'", "User B", "User B'", "User C",
-    "User C'", "User D", "User D'"
-};
-
-static const char* filterTypeNames[] = {
-    "LP 12", "LP 24", "HP 12", "HP 24", "BP 12", "BP 24", "Notch 12", "Notch 24",
-    "Peak 12", "Peak 24", "Low Shelf", "High Shelf", "Bandpass", "Comb",
-    "Formant", "Allpass", "Reso"
-};
-
 InfectorEngine::InfectorEngine()
     : sampleRate(44100.0)
     , noteActive(false)
@@ -61,65 +41,27 @@ InfectorEngine::InfectorEngine()
     , waveformA(0)
     , waveformB(0)
 {
-    initParams();
-    
+    // Simple parameter initialization without StringArray to avoid crash
+    params.push_back({ "volume", "Volume", "", 0.0f, 1.0f, 0.7f });
+    params.push_back({ "waveform_a", "OSC1 Waveform", "", 0.0f, 22.0f, 0.0f });
+    params.push_back({ "waveform_b", "OSC2 Waveform", "", 0.0f, 22.0f, 0.0f });
+    params.push_back({ "osc_mix", "OSC Mix", "", 0.0f, 1.0f, 0.5f });
+    params.push_back({ "sub_osc_wave", "SubOsc Waveform", "", 0.0f, 20.0f, 0.0f });
+    params.push_back({ "sub_osc_vol", "SubOsc Volume", "", 0.0f, 1.0f, 0.0f });
+    params.push_back({ "filter_type", "Filter Type", "", 0.0f, 17.0f, 0.0f });
+    params.push_back({ "filter_cutoff", "Filter Cutoff", "Hz", 20.0f, 20000.0f, 1000.0f });
+    params.push_back({ "filter_resonance", "Filter Resonance", "", 0.0f, 1.0f, 0.5f });
+    params.push_back({ "amp_attack", "Amp Attack", "s", 0.001f, 4.0f, 0.01f });
+    params.push_back({ "amp_decay", "Amp Decay", "s", 0.001f, 4.0f, 0.5f });
+    params.push_back({ "amp_sustain", "Amp Sustain", "", 0.0f, 1.0f, 0.5f });
+    params.push_back({ "amp_release", "Amp Release", "s", 0.001f, 4.0f, 0.5f });
+
     // Initialize all values
     for (int i = 0; i < kNumParams; i++)
         values[i] = params[i].defaultValue;
     
     // Update derived parameters
     updateParameters();
-}
-
-void InfectorEngine::initParams()
-{
-    // Initialize parameters - Volume first, then rest
-    params.push_back({ "volume", "Volume", "", 0.0f, 1.0f, 0.7f });
-
-    // OSC1 Waveform with discrete choices
-    juce::StringArray waveformChoices;
-    for (int i = 0; i < 23; i++)
-        waveformChoices.add(juce::String(waveformNames[i]));
-    
-    InstrumentParam waveParamA = { "waveform_a", "OSC1 Waveform", "", 0.0f, 22.0f, 0.0f };
-    waveParamA.choices = waveformChoices;
-    params.push_back(waveParamA);
-
-    // OSC2 Waveform
-    InstrumentParam waveParamB = { "waveform_b", "OSC2 Waveform", "", 0.0f, 22.0f, 0.0f };
-    waveParamB.choices = waveformChoices;
-    params.push_back(waveParamB);
-
-    params.push_back({ "osc_mix", "OSC Mix", "", 0.0f, 1.0f, 0.5f });
-
-    // Sub oscillator
-    juce::StringArray subOscChoices;
-    for (int i = 0; i < 21; i++)
-        subOscChoices.add(juce::String(subOscWaveformNames[i]));
-    
-    InstrumentParam subWaveParam = { "sub_osc_wave", "SubOsc Waveform", "", 0.0f, 20.0f, 0.0f };
-    subWaveParam.choices = subOscChoices;
-    params.push_back(subWaveParam);
-
-    params.push_back({ "sub_osc_vol", "SubOsc Volume", "", 0.0f, 1.0f, 0.0f });
-
-    // Filter parameters
-    juce::StringArray filterTypeChoices;
-    for (int i = 0; i < 18; i++)
-        filterTypeChoices.add(juce::String(filterTypeNames[i]));
-    
-    InstrumentParam filterTypeParam = { "filter_type", "Filter Type", "", 0.0f, 17.0f, 0.0f };
-    filterTypeParam.choices = filterTypeChoices;
-    params.push_back(filterTypeParam);
-
-    params.push_back({ "filter_cutoff", "Filter Cutoff", "Hz", 20.0f, 20000.0f, 1000.0f });
-    params.push_back({ "filter_resonance", "Filter Resonance", "", 0.0f, 1.0f, 0.5f });
-
-    // Amp envelope parameters
-    params.push_back({ "amp_attack", "Amp Attack", "s", 0.001f, 4.0f, 0.01f });
-    params.push_back({ "amp_decay", "Amp Decay", "s", 0.001f, 4.0f, 0.5f });
-    params.push_back({ "amp_sustain", "Amp Sustain", "", 0.0f, 1.0f, 0.5f });
-    params.push_back({ "amp_release", "Amp Release", "s", 0.001f, 4.0f, 0.5f });
 }
 
 void InfectorEngine::prepare(double newSampleRate, int maxBlockSize)
