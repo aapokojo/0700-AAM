@@ -21,62 +21,18 @@ public:
     enum Param
     {
         kVolume,
-        // OSC1
         kWaveformA,
-        kPWMRateA,
-        kPWMRangeA,
-        kPWOffsetA,
-        // OSC2
         kWaveformB,
-        kPWMRateB,
-        kPWMRangeB,
-        kPWOffsetB,
-        // Mix
-        kTranspose,
-        kDetune,
         kOscMix,
         kSubOscWave,
         kSubOscVolume,
-        kGlide,
-        // Filter
         kFilterType,
         kFilterCutoff,
         kFilterResonance,
-        kFilterModulation,
-        kFilterAttack,
-        kFilterDecay,
-        kFilterSustain,
-        kFilterRelease,
-        kFilterShape,
-        kFilterInertia,
-        kFilterTrack,
-        // LFO1
-        kLFORate,
-        kLFOAmount1,
-        kLFOAmount2,
-        kLFOShape,
-        // LFO2
-        kLFO2Rate,
-        kLFO2Amount1,
-        kLFO2Amount2,
-        kLFO2Shape,
-        // Amp Envelope
         kAmpAttack,
         kAmpDecay,
         kAmpSustain,
         kAmpRelease,
-        // LFO Mode
-        kLFOMode,
-        kLFOPhase,
-        // Note parameters
-        kNote,
-        kVelocity,
-        kLength,
-        kCommand1,
-        kArgument1,
-        kCommand2,
-        kArgument2,
-        kVibrato2,
         kNumParams
     };
 
@@ -115,29 +71,6 @@ private:
     // Filter state
     float filterCutoff;
     float filterResonance;
-    float filterModulation;
-    float filterAttack;
-    float filterDecay;
-    float filterSustain;
-    float filterRelease;
-    float filterShape;
-    float filterInertia;
-    float filterTrack;
-    float filterEnvPhase;
-    float filterEnvValue;
-
-    // LFO state
-    float lfoPhase;
-    float lfoRate;
-    float lfoAmount1;
-    float lfoAmount2;
-    float lfoShape;
-    float lfo2Phase;
-    float lfo2Rate;
-    float lfo2Amount1;
-    float lfo2Amount2;
-    float lfo2Shape;
-    int lfoMode;
 
     // Amp envelope state
     float ampEnvPhase;
@@ -147,19 +80,8 @@ private:
     float ampSustain;
     float ampRelease;
 
-    // Glide
-    float glide;
-    float targetFreqA;
-    float targetFreqB;
-
-    // PWM state
-    float pwmPhaseA;
-    float pwmPhaseB;
-
-    // Volume
+    // Volume and mix
     float volume;
-    float transpose;
-    float detune;
     float oscMix;
     int subOscWave;
     float subOscVolume;
