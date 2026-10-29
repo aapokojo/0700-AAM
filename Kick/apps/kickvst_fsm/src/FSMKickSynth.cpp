@@ -100,20 +100,6 @@ void FSMKickSynth::trigger()
     
     // Calculate initial frequency
     frequency = startFreq;
-    
-    // Update phase increments
-    updatePhaseIncrements();
-}
-
-void FSMKickSynth::updatePhaseIncrements()
-{
-    double freqRatio = endFreq / std::max(startFreq, 0.1f);
-    double envPoint = envPhase * toneDecay * 0.0025;  // Scale to ~400 samples max
-    double shapedPoint = std::pow(envPoint, toneShape * 2.0);
-    frequency = startFreq * std::pow(freqRatio, shapedPoint);
-    
-    dxSin = std::sin(2.0 * M_PI * frequency / sampleRate);
-    dxCos = std::cos(2.0 * M_PI * frequency / sampleRate);
 }
 
 void FSMKickSynth::processBlock(juce::AudioBuffer<float>& buffer, int startSample, int numSamples)

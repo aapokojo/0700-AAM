@@ -54,8 +54,6 @@ public:
 
     /** Reset the synthesizer */
     void reset();
-
-private:
     // Synthesis state
     double sampleRate;
     double oscPhase;           // Oscillator phase
