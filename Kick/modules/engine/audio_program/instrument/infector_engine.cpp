@@ -36,6 +36,42 @@ static const char* filterTypeNames[] = {
 };
 
 InfectorEngine::InfectorEngine()
+    : sampleRate(44100.0)
+    , noteActive(false)
+    , currentNote(60)
+    , noteVelocity(1.0f)
+    , oscPhaseA(0.0f)
+    , oscPhaseB(0.0f)
+    , oscPhaseSub(0.0f)
+    , freqA(0.0f)
+    , freqB(0.0f)
+    , freqSub(0.0f)
+    , filterCutoff(1000.0f)
+    , filterResonance(0.5f)
+    , ampEnvPhase(0)
+    , ampEnvValue(0.0f)
+    , ampAttack(0.01f)
+    , ampDecay(0.5f)
+    , ampSustain(0.5f)
+    , ampRelease(0.5f)
+    , volume(0.7f)
+    , oscMix(0.5f)
+    , subOscWave(0)
+    , subOscVolume(0.0f)
+    , waveformA(0)
+    , waveformB(0)
+{
+    initParams();
+    
+    // Initialize all values
+    for (int i = 0; i < kNumParams; i++)
+        values[i] = params[i].defaultValue;
+    
+    // Update derived parameters
+    updateParameters();
+}
+
+void InfectorEngine::initParams()
 {
     // Initialize parameters - Volume first, then rest
     params.push_back({ "volume", "Volume", "", 0.0f, 1.0f, 0.7f });
@@ -84,43 +120,6 @@ InfectorEngine::InfectorEngine()
     params.push_back({ "amp_decay", "Amp Decay", "s", 0.001f, 4.0f, 0.5f });
     params.push_back({ "amp_sustain", "Amp Sustain", "", 0.0f, 1.0f, 0.5f });
     params.push_back({ "amp_release", "Amp Release", "s", 0.001f, 4.0f, 0.5f });
-
-    // Initialize all values
-    for (int i = 0; i < kNumParams; i++)
-        values[i] = params[i].defaultValue;
-
-    // Initialize state
-    sampleRate = 44100.0;
-    noteActive = false;
-    currentNote = 60;
-    noteVelocity = 1.0f;
-
-    oscPhaseA = 0.0f;
-    oscPhaseB = 0.0f;
-    oscPhaseSub = 0.0f;
-    freqA = 0.0f;
-    freqB = 0.0f;
-    freqSub = 0.0f;
-
-    filterCutoff = 1000.0f;
-    filterResonance = 0.5f;
-
-    ampEnvPhase = 0;
-    ampEnvValue = 0.0f;
-    ampAttack = 0.01f;
-    ampDecay = 0.5f;
-    ampSustain = 0.5f;
-    ampRelease = 0.5f;
-
-    volume = 0.7f;
-    oscMix = 0.5f;
-    subOscWave = 0;
-    subOscVolume = 0.0f;
-    waveformA = 0;
-    waveformB = 0;
-
-    // Update parameters
-    updateParameters();
 }
 
 void InfectorEngine::prepare(double newSampleRate, int maxBlockSize)

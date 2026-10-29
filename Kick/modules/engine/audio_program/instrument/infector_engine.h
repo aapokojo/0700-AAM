@@ -49,6 +49,7 @@ public:
     void setParam(int index, float value) override;
 
 private:
+    void initParams();
     void updateParameters();
     float noteToFreq(int note);
     float getWaveformValue(int waveform, float phase);
