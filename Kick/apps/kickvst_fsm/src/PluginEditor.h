@@ -53,15 +53,6 @@ private:
     juce::Label titleLabel;
     juce::Label creditsLabel;
 
-    // Attachments for parameter automation
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> 
-        startFreqAttachment,
-        endFreqAttachment,
-        toneDecayAttachment,
-        toneShapeAttachment,
-        ampDecayAttachment,
-        volumeAttachment;
-
     void sliderValueChanged(juce::Slider* slider) override;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FSMKickAudioProcessorEditor)

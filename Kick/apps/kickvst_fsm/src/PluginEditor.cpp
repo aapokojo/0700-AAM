@@ -26,44 +26,38 @@ FSMKickAudioProcessorEditor::FSMKickAudioProcessorEditor (FSMKickAudioProcessor&
     startFreqSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 100, 20);
     startFreqSlider.setRange(20.0, 2000.0, 1.0);
     startFreqSlider.setSkewFactorFromMidPoint(440.0);
-    startFreqAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        audioProcessor.state, "start_freq", startFreqSlider);
+    startFreqSlider.addListener(this);
 
     addAndMakeVisible(endFreqSlider);
     endFreqSlider.setSliderStyle(juce::Slider::RotaryVerticalDrag);
     endFreqSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 100, 20);
     endFreqSlider.setRange(20.0, 2000.0, 1.0);
     endFreqSlider.setSkewFactorFromMidPoint(440.0);
-    endFreqAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        audioProcessor.state, "end_freq", endFreqSlider);
+    endFreqSlider.addListener(this);
 
     addAndMakeVisible(toneDecaySlider);
     toneDecaySlider.setSliderStyle(juce::Slider::RotaryVerticalDrag);
     toneDecaySlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 100, 20);
     toneDecaySlider.setRange(0.0, 1.0, 0.01);
-    toneDecayAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        audioProcessor.state, "tone_decay", toneDecaySlider);
+    toneDecaySlider.addListener(this);
 
     addAndMakeVisible(toneShapeSlider);
     toneShapeSlider.setSliderStyle(juce::Slider::RotaryVerticalDrag);
     toneShapeSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 100, 20);
     toneShapeSlider.setRange(0.0, 1.0, 0.01);
-    toneShapeAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        audioProcessor.state, "tone_shape", toneShapeSlider);
+    toneShapeSlider.addListener(this);
 
     addAndMakeVisible(ampDecaySlider);
     ampDecaySlider.setSliderStyle(juce::Slider::RotaryVerticalDrag);
     ampDecaySlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 100, 20);
     ampDecaySlider.setRange(0.0, 1.0, 0.01);
-    ampDecayAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        audioProcessor.state, "amp_decay", ampDecaySlider);
+    ampDecaySlider.addListener(this);
 
     addAndMakeVisible(volumeSlider);
     volumeSlider.setSliderStyle(juce::Slider::RotaryVerticalDrag);
     volumeSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 100, 20);
     volumeSlider.setRange(0.0, 1.0, 0.01);
-    volumeAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        audioProcessor.state, "volume", volumeSlider);
+    volumeSlider.addListener(this);
 
     // Set up labels
     addAndMakeVisible(startFreqLabel);
