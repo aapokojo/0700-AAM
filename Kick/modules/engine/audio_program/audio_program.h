@@ -58,6 +58,7 @@
     #include "synth/keygroupProgram.h"
     #include "instrument/mt_instrument_engine.h"
     #include "instrument/mt_basic_synth_engine.h"
+    #include "instrument/arpman_engine.h"
     #include "instrument/fsm_kick_engine.h"
     #include "instrument/kickxp_engine.h"
     #include "instrument/modular/mt_modular_modules.h"

@@ -479,6 +479,54 @@ in the emulator's Plugin program type, with the following parameters:
 **Problem:** Most Buzz machines don't have an explicit volume/gain parameter.
 **Solution:** Always add a **Volume** parameter (normalized 0-1). For **new ports**, place it as the **first parameter** (index 0) for consistency. For existing ports, add it where it makes sense (but prefer the beginning).
 
+### 7. Discrete Parameters
+**Problem:** Buzz machines often have parameters with discrete values (e.g., waveform selection: 0=sine, 1=saw, 2=square).
+**Solution:** The `InstrumentParam` structure now supports a `choices` field (`juce::StringArray`) for discrete value labels. The UI automatically displays choice names instead of numeric indices.
+
+**Implementation:**
+```cpp
+// In your engine header, InstrumentParam now has:
+// juce::StringArray choices; // optional: discrete value names
+
+// In your engine's params initialization (cpp file):
+InstrumentParam waveParam = { "waveform", "Waveform", "", 0.0f, 2.0f, 0.0f };
+juce::StringArray waveformChoices;
+waveformChoices.addArray({ "Sine", "Saw", "Square" });
+waveParam.choices = waveformChoices;
+params.push_back(waveParam);
+
+// For filter type:
+InstrumentParam filterParam = { "filter_type", "Filter Type", "", 0.0f, 3.0f, 0.0f };
+juce::StringArray filterChoices;
+filterChoices.addArray({ "Lowpass", "Highpass", "Bandpass", "Notch" });
+filterParam.choices = filterChoices;
+params.push_back(filterParam);
+```
+
+**UI Integration:** The parameter editor in `kick_InstrumentProgramEdit.cpp` automatically uses `MachineParamHelper` to display choice names. When a parameter has the `choices` field populated, the knob displays the choice name (e.g., "Sine", "Square") instead of the numeric index (e.g., "0.00", "1.00").
+
+**Buzz Machine Parameter Types:**
+- `pt_byte`: 0-255 discrete values
+- `pt_word`: 0-65535 discrete values  
+- `pt_switch`: Boolean/toggle (0-1)
+- `pt_note`: MIDI note values (0-127)
+- `pt_pitch`: Pitch with range
+
+**Mapping to JUCE:**
+- Use `minValue` and `maxValue` to match Buzz machine ranges
+- Add `choices` for named discrete options
+- Example: Buzz `pt_byte` with range 0-13 → JUCE 0.0f-13.0f with choices
+
+**Example - ArpMan Waveform:**
+```cpp
+// Buzz: pt_byte, range 0-13
+// JUCE: min=0, max=13, with choices for each value
+juce::StringArray waveformChoices;
+waveformChoices.addArray({ "Sine", "Saw", "Square", "Triangle", "Noise",
+                            "Hex 1", "Hex 2", "Octave", "FM 1", "FM 2",
+                            "FM 3", "FM 4", "E.Piano 1", "E.Piano 2" });
+```
+
 **Implementation:**
 ```cpp
 // In your engine header (enum Param) - NEW PORTS:

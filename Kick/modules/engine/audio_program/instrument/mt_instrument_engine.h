@@ -20,6 +20,7 @@ namespace mt
         float        minValue{ 0.f };
         float        maxValue{ 1.f };
         float        defaultValue{ 0.f };
+        juce::StringArray choices; // optional: discrete value names (e.g., "Sine", "Saw", "Square")
     };
 
     class IInstrumentEngine

@@ -2,6 +2,8 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
+#include "kick_MachineParamHelper.h"
+
 namespace kick_ui
 {
     namespace
@@ -182,7 +184,19 @@ namespace kick_ui
                 range.setSkewForCentre( std::sqrt( (double)p.minValue * p.maxValue ) );
 
             knob.setNormalisableRange( range );
-            knob.setNumDecimalPlacesToDisplay( p.maxValue - p.minValue >= 100.f ? 0 : 2 );
+            
+            // Use MachineParamHelper to display choice names for discrete parameters
+            if( !p.choices.isEmpty() )
+            {
+                knob.textFromValueFunction = [p]( double value ) -> juce::String {
+                    return MachineParamHelper::getDisplayTextForParam( p, (float)value, 0 );
+                };
+            }
+            else
+            {
+                knob.setNumDecimalPlacesToDisplay( p.maxValue - p.minValue >= 100.f ? 0 : 2 );
+            }
+            
             knob.setTextValueSuffix( p.label.isNotEmpty() ? " " + p.label : juce::String() );
             knob.setTitle( "P" + juce::String( k + 1 ) + "  " + inst->getParamName( index ).toUpperCase() ); // Modular: the patch names its macros
             knob.setValue( inst->getParam( index ), juce::dontSendNotification );

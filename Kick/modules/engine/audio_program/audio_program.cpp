@@ -42,6 +42,7 @@
 #include "synth/clipProgram.cpp"
 #include "synth/DrumProgram.cpp"
 #include "synth/KeygroupProgram.cpp"
+#include "instrument/arpman_engine.cpp"
 #include "instrument/fsm_kick_engine.cpp"
 #include "instrument/kickxp_engine.cpp"
 #include "instrument/mt_basic_synth_engine.cpp"

@@ -2,6 +2,7 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
+#include "arpman_engine.h"
 #include "fsm_kick_engine.h"
 #include "kickxp_engine.h"
 
@@ -268,6 +269,7 @@ namespace mt
         std::map<juce::String, InstrumentEngineRegistry::Factory>& registry()
         {
             static std::map<juce::String, InstrumentEngineRegistry::Factory> engines = {
+                { "ArpMan", []() { return std::make_unique<ArpManEngine>(); } },
                 { "Basic Synth", []() { return std::make_unique<BasicSynthEngine>(); } },
                 { "Modular", []() { return std::make_unique<ModularEngine>(); } },
                 { "FSM Kick", []() { return std::make_unique<FSMKickEngine>(); } },
